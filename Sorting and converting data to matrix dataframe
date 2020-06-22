@@ -1,0 +1,41 @@
+from keras.layers import Input,Dense
+from keras.models import Model
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+#############################################################################################################
+
+dataset = pd.read_csv('C:/Users/Desktop/Dataset.csv')
+print(dataset.head())
+
+Env = dataset.Column1.unique() #unique of Column1
+PS = dataset.Column2.unique() #unique of Column2
+
+Column1id2idx = {o:i for i,o in enumerate(Env)} # to Dictionary 'xzy' = {int} 1 and so on...
+Column2id2idx =  {o:i for i,o in enumerate(PS)} # to Dictionary ''abcd'' = {int} 1 and so on..
+
+dataset.Column1 = dataset.Column1.apply(lambda x: Column1id2idx[x])
+dataset.Column2 = dataset.Column2.apply(lambda x: Column2id2idx[x])
+# print(dataset.head())
+
+Column1_min,Column1_max, Column2_min, Column2_max = (dataset.Column1.min(),dataset.Column1.max(),dataset.Column2.min,dataset.Column2.max())
+# print(Column1_min,Column1_max, Column2_min, Column2_max)
+
+
+
+g = dataset.groupby('Column1')['Column3'].count()# counting number of Column3 vaues per unique Column1
+topColumn1 = g.sort_values(ascending = False)[:5000]
+
+g = dataset.groupby('Column2')['Column3'].count()#counting number of Column3 per unique Column2 values
+topColumn2 = g.sort_values(ascending = False)[:1000]
+
+top = dataset.join(topColumn1, rsuffix='_r', how='inner', on='Column1') #env_id, ps_id,gkpi,no. of gkpi per env id
+top = top.join(topColumn2, rsuffix='_r', how='inner', on='PS_ID')
+a = pd.crosstab(top.Column1, top.Column2, top.Column3, aggfunc=np.sum)
+a = a.replace(np.nan, 0)
+with open('C:/Users/Desktop/Mat_Data.csv', 'w') as f:
+    a.to_csv(f, index=False)
+############################################################################################################
+# a = pd.read_csv("C:/Users/Desktop/Mat_Data.csv",index_col=False)#.mean().reset_index().groupby(['Column1'])
+# a = a.replace(np.nan, 0)#if nan present
